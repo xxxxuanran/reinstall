@@ -3824,10 +3824,10 @@ EOF
         # 标记所有内核为自动安装
         # 注意排除 linux-base
         # 返回值始终为 0
-        pkgs=$(chroot $os_dir apt-mark showmanual \
-            linux-generic linux-virtual linux-kvm \
-            linux-image* linux-headers*)
-        chroot $os_dir apt-mark auto $pkgs
+        # pkgs=$(chroot $os_dir apt-mark showmanual \
+        #     linux-generic linux-virtual linux-kvm \
+        #     linux-image* linux-headers*)
+        # chroot $os_dir apt-mark auto $pkgs
 
         # 安装最佳内核
         flavor=$(get_ubuntu_kernel_flavor)
@@ -3835,7 +3835,7 @@ EOF
         chroot_apt_install $os_dir "linux-image-$flavor"
 
         # 使用 autoremove 删除多余内核
-        chroot_apt_autoremove $os_dir
+        # chroot_apt_autoremove $os_dir
 
         # 安装固件+微码
         if fw_pkgs=$(get_ucode_firmware_pkgs) && [ -n "$fw_pkgs" ]; then
@@ -3876,10 +3876,10 @@ EOF
         # 自带的 60-cloudimg-settings.conf 禁止了 PasswordAuthentication
         file=$os_dir/etc/ssh/sshd_config.d/60-cloudimg-settings.conf
         if [ -f $file ]; then
-            sed -i '/^PasswordAuthentication/d' $file
-            if [ -z "$(cat $file)" ]; then
-                rm -f $file
-            fi
+            sed -i.bak '/^PasswordAuthentication/d' $file
+            # if [ -z "$(cat $file)" ]; then
+            #     rm -f $file
+            # fi
         fi
 
         # 安装 bios 引导
@@ -3892,11 +3892,11 @@ EOF
         efi_grub_cfg=$os_dir/boot/efi/EFI/ubuntu/grub.cfg
         if is_efi; then
             os_uuid=$(lsblk -rno UUID /dev/$xda*2)
-            sed -Ei "s|[0-9a-f-]{36}|$os_uuid|i" $efi_grub_cfg
+            sed -i.bak -E "s|[0-9a-f-]{36}|$os_uuid|i" $efi_grub_cfg
 
             # 24.04 移除 boot 分区后，需要添加 /boot 路径
             if grep "'/grub'" $efi_grub_cfg; then
-                sed -i "s|'/grub'|'/boot/grub'|" $efi_grub_cfg
+                sed -i.bak2 "s|'/grub'|'/boot/grub'|" $efi_grub_cfg
             fi
         fi
 
@@ -3906,10 +3906,10 @@ EOF
             if is_virt; then
                 # 更改写死的 partuuid
                 os_part_uuid=$(lsblk -rno PARTUUID /dev/$xda*2)
-                sed -i "s/^GRUB_FORCE_PARTUUID=.*/GRUB_FORCE_PARTUUID=$os_part_uuid/" $force_partuuid_cfg
+                sed -i.bak "s/^GRUB_FORCE_PARTUUID=.*/GRUB_FORCE_PARTUUID=$os_part_uuid/" $force_partuuid_cfg
             else
                 # 独服不应该使用 initrdless boot
-                sed -i "/^GRUB_FORCE_PARTUUID=/d" $force_partuuid_cfg
+                sed -i.bak "/^GRUB_FORCE_PARTUUID=/d" $force_partuuid_cfg
             fi
         fi
 
@@ -3923,10 +3923,10 @@ EOF
 
         # fstab
         # 24.04 镜像有boot分区，但我们不需要
-        sed -i '/[[:space:]]\/boot[[:space:]]/d' $os_dir/etc/fstab
+        sed -i.bak '/[[:space:]]\/boot[[:space:]]/d' $os_dir/etc/fstab
         if ! is_efi; then
             # bios 删除 efi 条目
-            sed -i '/[[:space:]]\/boot\/efi[[:space:]]/d' $os_dir/etc/fstab
+            sed -i.bak2 '/[[:space:]]\/boot\/efi[[:space:]]/d' $os_dir/etc/fstab
         fi
 
         restore_resolv_conf $os_dir
@@ -5435,6 +5435,8 @@ get_ubuntu_kernel_flavor() {
         else
             echo generic-hwe-$releasever
         fi
+    elif [ "$releasever" = 24.04 ]; then
+        echo lowlatency
     else
         # 这里有坑
         # $(get_cloud_vendor) 调用了 cache_dmi_and_virt
@@ -5446,7 +5448,7 @@ get_ubuntu_kernel_flavor() {
         case "$vendor" in
         aws | gcp | oracle | azure | ibm) echo $vendor ;;
         *)
-            is_ubuntu_lts && suffix=-hwe-$releasever || suffix=
+            false && is_ubuntu_lts && suffix=-hwe-$releasever || suffix=
             if is_virt; then
                 echo virtual$suffix
             else
@@ -5556,7 +5558,7 @@ trans() {
 
     # 先检查 modloop 是否正常
     # 防止格式化硬盘后，缺少 ext4 模块导致 mount 失败
-    # https://github.com/bin456789/reinstall/issues/136
+    # https://github.com/xxxxuanran/reinstall/issues/136
     ensure_service_started modloop
 
     cat /proc/cmdline
@@ -5707,7 +5709,7 @@ mount / -o remount,size=100%
 
 # 同步时间
 # 1. 可以防止访问 https 出错
-# 2. 可以防止 https://github.com/bin456789/reinstall/issues/223
+# 2. 可以防止 https://github.com/xxxxuanran/reinstall/issues/223
 #    E: Release file for http://security.ubuntu.com/ubuntu/dists/noble-security/InRelease is not valid yet (invalid for another 5h 37min 18s).
 #    Updates for this repository will not be applied.
 # 3. 不能直接读取 rtc，因为默认情况 windows rtc 是本地时间，linux rtc 是 utc 时间

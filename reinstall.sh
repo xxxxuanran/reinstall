@@ -3,9 +3,9 @@
 # shellcheck disable=SC2086
 
 set -eE
-confhome=https://raw.githubusercontent.com/bin456789/reinstall/main
-confhome_cn=https://gitlab.com/bin456789/reinstall/-/raw/main
-# confhome_cn=https://www.ghproxy.cc/https://raw.githubusercontent.com/bin456789/reinstall/main
+confhome=https://raw.githubusercontent.com/xxxxuanran/reinstall/main
+confhome_cn=https://gitlab.com/xxxxuanran/reinstall/-/raw/main
+# confhome_cn=https://www.ghproxy.cc/https://raw.githubusercontent.com/xxxxuanran/reinstall/main
 
 # 默认密码
 DEFAULT_PASSWORD=123@@@
@@ -71,7 +71,7 @@ Usage: $reinstall_____ anolis      7|8|23
                        [--web-port PORT]
                        [--allow-ping]
 
-Manual: https://github.com/bin456789/reinstall
+Manual: https://github.com/xxxxuanran/reinstall
 
 EOF
     exit 1
