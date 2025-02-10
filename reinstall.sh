@@ -1166,6 +1166,7 @@ Continue?
         22.04) codename=jammy ;;
         24.04) codename=noble ;;
         24.10) codename=oracular ;; # non-lts
+        *) codename=noble ;;
         esac
 
         if is_use_cloud_image; then

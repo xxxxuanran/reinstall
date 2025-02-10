@@ -5435,8 +5435,8 @@ get_ubuntu_kernel_flavor() {
         else
             echo generic-hwe-$releasever
         fi
-    elif [ "$releasever" = 24.04 ]; then
-        echo lowlatency
+    # elif [ "$releasever" = 24.04 ]; then
+    #     echo lowlatency
     else
         # 这里有坑
         # $(get_cloud_vendor) 调用了 cache_dmi_and_virt
