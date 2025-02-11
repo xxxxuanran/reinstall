@@ -3832,15 +3832,15 @@ EOF
         # 安装最佳内核
         flavor=$(get_ubuntu_kernel_flavor)
         echo "Use kernel flavor: $flavor"
-        chroot_apt_install $os_dir "linux-image-$flavor"
+        # chroot_apt_install $os_dir "linux-image-$flavor"
 
         # 使用 autoremove 删除多余内核
         # chroot_apt_autoremove $os_dir
 
         # 安装固件+微码
-        if fw_pkgs=$(get_ucode_firmware_pkgs) && [ -n "$fw_pkgs" ]; then
-            chroot_apt_install $os_dir $fw_pkgs
-        fi
+        # if fw_pkgs=$(get_ucode_firmware_pkgs) && [ -n "$fw_pkgs" ]; then
+        #     chroot_apt_install $os_dir $fw_pkgs
+        # fi
 
         # 网络配置
         # 18.04+ netplan
@@ -5528,7 +5528,7 @@ install_redhat_ubuntu() {
             insmod all_video
             search --no-floppy --label --set=root installer
             loopback loop /ubuntu.iso
-            linux (loop)/casper/vmlinuz iso-scan/filename=/ubuntu.iso autoinstall noprompt noeject cloud-config-url=$ks $extra_cmdline extra_kernel=$kernel extra_source_id=$source_id --- $console_cmdline
+            linux (loop)/casper/vmlinuz iso-scan/filename=/ubuntu.iso autoinstall noprompt noeject cloud-config-url=$ks $extra_cmdline extra_source_id=$source_id --- $console_cmdline
             initrd (loop)/casper/initrd
         }
 EOF

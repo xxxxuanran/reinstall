@@ -6,8 +6,8 @@ autoinstall:
     fallback: offline-install
   source:
     id: "@SOURCE_ID@"
-  kernel:
-    package: linux-generic
+  # kernel:
+  #   package: linux-generic
   timezone: Asia/Shanghai
   ssh:
     allow-pw: true
@@ -41,8 +41,8 @@ autoinstall:
 
       # 内核风味
       # https://bugs.launchpad.net/subiquity/+bug/1989353
-      sed -i "s/generic/$kernel/" /run/kernel-meta-package
-      sed -i "/package:/s/generic/$kernel/" /autoinstall.yaml
+      # sed -i "s/generic/$kernel/" /run/kernel-meta-package
+      # sed -i "/package:/s/generic/$kernel/" /autoinstall.yaml
 
       # 跳过最后的更新
       cp /usr/sbin/chroot /usr/sbin/chroot.bin
