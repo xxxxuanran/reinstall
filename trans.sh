@@ -2771,6 +2771,7 @@ create_network_manager_config() {
     sed -i -e '/^may-fail=/d' -e 's/^method=dhcp/method=auto/' \
         /out/etc/NetworkManager/system-connections/cloud-init-eth*.nmconnection
 
+    mkdir -p $os_dir/etc/NetworkManager/system-connections/
     cp /out/etc/NetworkManager/system-connections/cloud-init-eth*.nmconnection $os_dir/etc/NetworkManager/system-connections/
 
     # 清理

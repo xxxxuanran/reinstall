@@ -127,14 +127,17 @@ curl() {
 is_in_china() {
     [ "$force_cn" = 1 ] && return 0
 
-    if [ -z "$_loc" ]; then
-        # 部分地区 www.cloudflare.com 被墙
-        _loc=$(curl -L http://dash.cloudflare.com/cdn-cgi/trace | grep '^loc=' | cut -d= -f2)
-        if [ -z "$_loc" ]; then
-            error_and_exit "Can not get location."
+    # 分开 v4 和 v6 检测，防止 v6 送中
+    if [ -z "$_loc_v4" ] || [ -z "$_loc_v6" ]; then
+        _loc_v4=$(curl -4 -L http://dash.cloudflare.com/cdn-cgi/trace 2>/dev/null | grep '^loc=' | cut -d= -f2)
+        _loc_v6=$(curl -6 -L http://dash.cloudflare.com/cdn-cgi/trace 2>/dev/null | grep '^loc=' | cut -d= -f2)
+        if [ -z "$_loc_v4" ] && [ -z "$_loc_v6" ]; then
+            error_and_exit "Can not get location through either IPv4 or IPv6."
         fi
     fi
-    [ "$_loc" = CN ]
+
+    # 有一个出口不为 CN 时，认为另外一个 IP 为送中
+    [ "$_loc_v4" = CN ] && [ "$_loc_v6" = CN ]
 }
 
 is_in_windows() {
