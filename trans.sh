@@ -3291,8 +3291,8 @@ EOF
 
         # 避免 do-release-upgrade 时自动执行 dpkg-reconfigure grub-xx 但是 efi/biosgrub 分区不存在而导致报错
         # shellcheck disable=SC2046
-        chroot_apt_remove $os_dir $(is_efi && echo 'grub-pc' || echo 'grub-efi*' 'shim*')
-        chroot_apt_autoremove $os_dir
+        # chroot_apt_remove $os_dir $(is_efi && echo 'grub-pc' || echo 'grub-efi*' 'shim*')
+        # chroot_apt_autoremove $os_dir
 
         # 安装 mbr
         if ! is_efi; then
