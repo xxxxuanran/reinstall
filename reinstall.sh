@@ -3,7 +3,7 @@
 # shellcheck disable=SC2086
 
 set -eE
-confhome=https://raw.githubusercontent.com/bin456789/reinstall/main
+confhome=https://raw.githubusercontent.com/xxxxuanran/reinstall/ubuntu-origin
 confhome_cn=https://cnb.cool/bin456789/reinstall/-/git/raw/main
 # confhome_cn=https://www.ghproxy.cc/https://raw.githubusercontent.com/bin456789/reinstall/main
 
@@ -19,6 +19,8 @@ WINDOWS_EXES='cmd powershell wmic reg diskpart netsh bcdedit mountvol'
 # 强制 linux 程序输出英文，防止 grep 不到想要的内容
 # https://www.gnu.org/software/gettext/manual/html_node/The-LANGUAGE-variable.html
 export LC_ALL=C
+
+DEBIAN_MIRROR=deb.debian.org/debian
 
 # 处理部分用户用 su 切换成 root 导致环境变量没 sbin 目录
 # 也能处理 cygwin bash 没有添加 -l 运行 reinstall.sh
@@ -1105,76 +1107,22 @@ setos() {
     }
 
     setos_debian() {
-        is_debian_elts() {
-            [ "$releasever" -le 10 ]
-        }
-
         # 用此标记要是否 elts, 用于安装后修改 elts/etls-cn 源
         # shellcheck disable=SC2034
-        is_debian_elts && elts=1 || elts=0
+        elts=0
 
         case "$releasever" in
-        9) codename=stretch ;;
-        10) codename=buster ;;
-        11) codename=bullseye ;;
         12) codename=bookworm ;;
+        *) codename=bookworm ;;
         esac
 
-        if ! is_use_cloud_image && is_debian_elts && is_in_china; then
-            warn "
-Due to the lack of Debian Freexian ELTS instaler mirrors in China, the installation time may be longer.
-Continue?
-
-由于没有 Debian Freexian ELTS 国内安装源，安装时间可能会比较长。
-继续安装?
-"
-            read -r -p '[y/N]: '
-            if ! [[ "$REPLY" = [Yy] ]]; then
-                exit
-            fi
-        fi
-
-        # udeb_mirror 安装时的源
-        # deb_mirror 安装后要修改成的源
-        if is_debian_elts; then
-            if is_in_china; then
-                # https://github.com/tuna/issues/issues/1999
-                # nju 也没同步
-                udeb_mirror=deb.freexian.com/extended-lts
-                deb_mirror=mirror.nju.edu.cn/debian-elts
-                initrd_mirror=mirror.nju.edu.cn/debian-archive/debian
-            else
-                # 按道理不应该用官方源，但找不到其他源
-                udeb_mirror=deb.freexian.com/extended-lts
-                deb_mirror=deb.freexian.com/extended-lts
-                initrd_mirror=archive.debian.org/debian
-            fi
-        else
-            if is_in_china; then
-                # ftp.cn.debian.org 不在国内还严重丢包
-                # https://www.itdog.cn/ping/ftp.cn.debian.org
-                mirror=mirror.nju.edu.cn/debian
-            else
-                mirror=deb.debian.org/debian # fastly
-            fi
-            udeb_mirror=$mirror
-            deb_mirror=$mirror
-            initrd_mirror=$mirror
-        fi
-
+        udeb_mirror=$DEBIAN_MIRROR
+        deb_mirror=$DEBIAN_MIRROR
+        initrd_mirror=$DEBIAN_MIRROR
         # 云镜像和 firmware 下载源
-        if is_in_china; then
-            cdimage_mirror=https://mirror.nju.edu.cn/debian-cdimage
-        else
-            cdimage_mirror=https://cdimage.debian.org/images # 在瑞典，不是 cdn
-            # cloud.debian.org 同样在瑞典，不是 cdn
-        fi
+        cdimage_mirror=https://cdimage.debian.org/images
 
         is_virt && flavour=-cloud || flavour=
-        # debian 10 云内核 vultr efi vnc 没有显示
-        [ "$releasever" -le 10 ] && flavour=
-        # 甲骨文 arm64 cloud 内核 vnc 没有显示
-        [ "$basearch_alt" = arm64 ] && flavour=
 
         if is_use_cloud_image; then
             # cloud image
@@ -1233,27 +1181,13 @@ Continue?
 
     setos_ubuntu() {
         case "$releasever" in
-        16.04) codename=xenial ;;
-        18.04) codename=bionic ;;
-        20.04) codename=focal ;;
-        22.04) codename=jammy ;;
         24.04) codename=noble ;;
-        25.04) codename=plucky ;; # non-lts
+        *) codename=noble ;;
         esac
 
         if is_use_cloud_image; then
             # cloud image
-            if is_in_china; then
-                # 有的源没有 releases 镜像
-                # https://mirrors.tuna.tsinghua.edu.cn/ubuntu-cloud-images/releases/
-                #   https://unicom.mirrors.ustc.edu.cn/ubuntu-cloud-images/releases/
-                #            https://mirror.nju.edu.cn/ubuntu-cloud-images/releases/
-
-                # mirrors.cloud.tencent.com
-                ci_mirror=https://mirror.nju.edu.cn/ubuntu-cloud-images
-            else
-                ci_mirror=https://cloud-images.ubuntu.com
-            fi
+            ci_mirror=https://cloud-images.ubuntu.com
 
             # 以下版本有 minimal 镜像
             # amd64 所有
@@ -1283,17 +1217,10 @@ Continue?
             fi
         else
             # 传统安装
-            if is_in_china; then
-                case "$basearch" in
-                "x86_64") mirror=https://mirror.nju.edu.cn/ubuntu-releases/$releasever ;;
-                "aarch64") mirror=https://mirror.nju.edu.cn/ubuntu-cdimage/releases/$releasever/release ;;
-                esac
-            else
-                case "$basearch" in
-                "x86_64") mirror=https://releases.ubuntu.com/$releasever ;;
-                "aarch64") mirror=https://cdimage.ubuntu.com/releases/$releasever/release ;;
-                esac
-            fi
+            case "$basearch" in
+            "x86_64") mirror=https://releases.ubuntu.com/$releasever ;;
+            "aarch64") mirror=https://cdimage.ubuntu.com/releases/$releasever/release ;;
+            esac
 
             # iso
             filename=$(curl -L $mirror/ | grep -oP "ubuntu-$releasever.*?-live-server-$basearch_alt.iso" |
@@ -1306,79 +1233,6 @@ Continue?
             # ks
             eval ${step}_ks=$confhome/ubuntu.yaml
             eval ${step}_minimal=$minimal
-        fi
-    }
-
-    setos_arch() {
-        if [ "$basearch" = "x86_64" ]; then
-            if is_in_china; then
-                mirror=https://mirror.nju.edu.cn/archlinux
-            else
-                mirror=https://geo.mirror.pkgbuild.com # geoip
-            fi
-        else
-            if is_in_china; then
-                mirror=https://mirror.nju.edu.cn/archlinuxarm
-            else
-                # https 证书有问题
-                mirror=http://mirror.archlinuxarm.org # geoip
-            fi
-        fi
-
-        if is_use_cloud_image; then
-            # cloud image
-            eval ${step}_img=$mirror/images/latest/Arch-Linux-x86_64-cloudimg.qcow2
-        else
-            # 传统安装
-            case "$basearch" in
-            x86_64) dir="core/os/$basearch" ;;
-            aarch64) dir="$basearch/core" ;;
-            esac
-            test_url $mirror/$dir/core.db gzip
-            eval ${step}_mirror=$mirror
-        fi
-    }
-
-    setos_nixos() {
-        if is_in_china; then
-            mirror=https://mirror.nju.edu.cn/nix-channels
-        else
-            mirror=https://nixos.org/channels
-        fi
-
-        if is_use_cloud_image; then
-            :
-        else
-            # 传统安装
-            # 该服务器文件缓存 miss 时会响应 206 + Location 头
-            # 但 curl 这种情况不会重定向，所以添加 text 类型让它不要报错
-            test_url $mirror/nixos-$releasever/store-paths.xz 'xz text'
-            eval ${step}_mirror=$mirror
-        fi
-    }
-
-    setos_gentoo() {
-        if is_in_china; then
-            mirror=https://mirror.nju.edu.cn/gentoo
-        else
-            mirror=https://distfiles.gentoo.org # cdn77
-        fi
-
-        dir=releases/$basearch_alt/autobuilds
-
-        if is_use_cloud_image; then
-            # 使用 systemd 且没有 cloud-init
-            prefix=di-$basearch_alt-console
-            filename=$(curl -L $mirror/$dir/latest-$prefix.txt | grep '.qcow2' | awk '{print $1}' | grep .)
-            file=$mirror/$dir/$filename
-            test_url "$file" 'qemu'
-            eval ${step}_img=$file
-        else
-            prefix=stage3-$basearch_alt-systemd
-            filename=$(curl -L $mirror/$dir/latest-$prefix.txt | grep '.tar.xz' | awk '{print $1}' | grep .)
-            file=$mirror/$dir/$filename
-            test_url "$file" 'tar.xz'
-            eval ${step}_img=$file
         fi
     }
 
@@ -1437,71 +1291,7 @@ Continue?
     }
 
     setos_windows() {
-        if [ -z "$iso" ]; then
-            # 查找时将 windows longhorn serverdatacenter 改成 windows server 2008 serverdatacenter
-            image_name=${image_name/windows longhorn server/windows server 2008 server}
-            echo "iso url is not set. Attempting to find it automatically."
-            find_windows_iso
-        fi
-
-        # 将上面的 windows server 2008 serverdatacenter 改回 windows longhorn serverdatacenter
-        # 也能纠正用户输入了 windows server 2008 serverdatacenter
-        # 注意 windows server 2008 r2 serverdatacenter 不用改
-        image_name=${image_name/windows server 2008 server/windows longhorn server}
-
-        if [[ "$iso" = magnet:* ]]; then
-            : # 不测试磁力链接
-        else
-            # 需要用户输入 massgrave.dev 直链
-            if grep -Eiq '\.massgrave\.dev/.*\.(iso|img)$' <<<"$iso" ||
-                grep -Eiq '\.gravesoft\.dev/#[0-9]+$' <<<"$iso"; then
-                info "Set Direct link"
-                # MobaXterm 不支持
-                # printf '\e]8;;http://example.com\e\\This is a link\e]8;;\e\\\n'
-
-                # MobaXterm 不显示为超链接
-                # info false "请在浏览器中打开 $iso 获取直链并粘贴到这里。"
-                # info false "Please open $iso in browser to get the direct link and paste it here."
-
-                echo "请在浏览器中打开 $iso 获取直链并粘贴到这里。"
-                echo "Please open $iso in browser to get the direct link and paste it here."
-                IFS= read -r -p "Direct Link: " iso
-                if [ -z "$iso" ]; then
-                    error_and_exit "ISO Link is empty."
-                fi
-            fi
-
-            # 测试是否是 iso
-            test_url "$iso" iso
-
-            # 判断 iso 架构是否兼容
-            # https://gitlab.com/libosinfo/osinfo-db/-/tree/main/data/os/microsoft.com?ref_type=heads
-            # uupdump linux 下合成的标签是 ARM64，windows下合成的标签是 A64
-            if file -b "$tmp/img-test" | grep -Eq '_(A64|ARM64)'; then
-                iso_arch=arm64
-            else
-                iso_arch=x86_or_x64
-            fi
-
-            if ! {
-                { [ "$basearch" = x86_64 ] && [ "$iso_arch" = x86_or_x64 ]; } ||
-                    { [ "$basearch" = aarch64 ] && [ "$iso_arch" = arm64 ]; }
-            }; then
-                warn "
-The current machine is $basearch, but it seems the ISO is for $iso_arch. Continue?
-当前机器是 $basearch，但 ISO 似乎是 $iso_arch。继续安装?"
-                read -r -p '[y/N]: '
-                if ! [[ "$REPLY" = [Yy] ]]; then
-                    exit
-                fi
-            fi
-        fi
-
-        [ -n "$boot_wim" ] && test_url "$boot_wim" 'wim'
-
-        eval "${step}_iso='$iso'"
-        eval "${step}_boot_wim='$boot_wim'"
-        eval "${step}_image_name='$image_name'"
+        return 1
     }
 
     # shellcheck disable=SC2154
@@ -1568,22 +1358,6 @@ Continue with DD?
         iso=$(curl -L https://fnnas.com/ | grep -o 'https://[^"]*\.iso' | head -1)
         test_url "$iso" iso
         eval "${step}_iso='$iso'"
-    }
-
-    setos_aosc() {
-        if is_in_china; then
-            mirror=https://mirror.nju.edu.cn/anthon/aosc-os
-        else
-            # 服务器在香港
-            mirror=https://releases.aosc.io
-        fi
-
-        dir=os-$basearch_alt/base
-        file=$(curl -L $mirror/$dir/ | grep -oP 'aosc-os_base_.*?\.tar.xz' |
-            sort -uV | tail -1 | grep .)
-        img=$mirror/$dir/$file
-        test_url $img 'tar.xz'
-        eval ${step}_img=$img
     }
 
     setos_centos_almalinux_rocky_fedora() {
@@ -1717,58 +1491,6 @@ Continue with DD?
         fi
     }
 
-    setos_opencloudos() {
-        # https://mirrors.opencloudos.tech 不支持 ipv6
-        # https://mirrors.cloud.tencent.com 没有 stream
-        if [ "$releasever" -ge 23 ]; then
-            mirror=https://mirrors.opencloudos.tech/opencloudos-stream/releases
-        else
-            mirror=https://mirrors.cloud.tencent.com/opencloudos
-        fi
-
-        if is_use_cloud_image; then
-            # ci
-            dir=$releasever/images/$basearch
-            file=$(curl -L $mirror/$dir/ | grep -oP 'OpenCloudOS.*?\.qcow2' |
-                sort -uV | tail -1 | grep .)
-            eval ${step}_img=$mirror/$dir/$file
-        else
-            :
-        fi
-    }
-
-    setos_anolis() {
-        mirror=https://mirrors.openanolis.cn/anolis
-        if is_use_cloud_image; then
-            # ci
-            dir=$releasever/isos/GA/$basearch
-            [ "$releasever" -ge 23 ] &&
-                filename='AnolisOS.*?\.qcow2' ||
-                filename='AnolisOS.*?-ANCK\.qcow2'
-            file=$(curl -L $mirror/$dir/ | grep -oP "$filename" |
-                sort -uV | tail -1 | grep .)
-            eval ${step}_img=$mirror/$dir/$file
-        else
-            :
-        fi
-    }
-
-    setos_openeuler() {
-        if is_in_china; then
-            mirror=https://repo.openeuler.openatom.cn
-        else
-            mirror=https://repo.openeuler.org
-        fi
-        if is_use_cloud_image; then
-            # ci
-            name=$(curl -L "$mirror/" | grep -oE "openEuler-$releasever(-LTS)?(-SP[0-9])?" |
-                sort -uV | tail -1 | grep .)
-            eval ${step}_img=$mirror/$name/virtual_machine_img/$basearch/$name-$basearch.qcow2.xz
-        else
-            :
-        fi
-    }
-
     eval ${step}_distro=$distro
     eval ${step}_releasever=$releasever
 
@@ -1863,7 +1585,6 @@ verify_os_args() {
     case "$distro" in
     dd) [ -n "$img" ] || error_and_exit "dd need --img" ;;
     redhat) [ -n "$img" ] || error_and_exit "redhat need --img" ;;
-    windows) [ -n "$image_name" ] || error_and_exit "Install Windows need --image-name." ;;
     esac
 
     case "$distro" in
