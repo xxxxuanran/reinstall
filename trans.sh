@@ -2001,7 +2001,7 @@ remove_cloud_init() {
     info "Remove Cloud-Init"
 
     # 两种方法都可以
-    if false && [ -d $os_dir/etc/cloud ]; then
+    if [ -d $os_dir/etc/cloud ]; then
         touch $os_dir/etc/cloud/cloud-init.disabled
     fi
 
@@ -2017,26 +2017,26 @@ remove_cloud_init() {
         fi
     done
 
-    for pkg_mgr in dnf yum zypper apt-get; do
-        if is_have_cmd_on_disk $os_dir $pkg_mgr; then
-            case $pkg_mgr in
-            dnf | yum)
-                chroot $os_dir $pkg_mgr remove -y cloud-init
-                rm -f $os_dir/etc/cloud/cloud.cfg.rpmsave
-                ;;
-            zypper)
-                # 加上 -u 才会删除依赖
-                chroot $os_dir zypper remove -y -u cloud-init
-                ;;
-            apt-get)
-                # ubuntu 25.04 开始有 cloud-init-base
-                chroot_apt_remove $os_dir cloud-init cloud-init-base
-                chroot_apt_autoremove $os_dir
-                ;;
-            esac
-            break
-        fi
-    done
+    # for pkg_mgr in dnf yum zypper apt-get; do
+    #     if is_have_cmd_on_disk $os_dir $pkg_mgr; then
+    #         case $pkg_mgr in
+    #         dnf | yum)
+    #             chroot $os_dir $pkg_mgr remove -y cloud-init
+    #             rm -f $os_dir/etc/cloud/cloud.cfg.rpmsave
+    #             ;;
+    #         zypper)
+    #             # 加上 -u 才会删除依赖
+    #             chroot $os_dir zypper remove -y -u cloud-init
+    #             ;;
+    #         apt-get)
+    #             # ubuntu 25.04 开始有 cloud-init-base
+    #             chroot_apt_remove $os_dir cloud-init cloud-init-base
+    #             chroot_apt_autoremove $os_dir
+    #             ;;
+    #         esac
+    #         break
+    #     fi
+    # done
 }
 
 disable_jeos_firstboot() {
