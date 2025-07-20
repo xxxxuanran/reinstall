@@ -1554,7 +1554,7 @@ verify_os_name() {
         'opensuse    15.6|16.0|tumbleweed' \
         'alpine      3.19|3.20|3.21|3.22' \
         'openeuler   20.03|22.03|24.03|25.03' \
-        'ubuntu      16.04|18.04|20.04|22.04|24.04|25.04' \
+        'ubuntu      25.04|24.04' \
         'redhat' \
         'kali' \
         'arch' \
